@@ -70,11 +70,35 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
+        newFood = successorGameState.getFood() #2D array, True if food, false if not
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
+
+        display = True
+        #TODO delete print statements
+
+        #SET TO FALSE before submission to remove print statement
+        if display is True:
+            print(f"new position of pacman: {newPos}") # positions are row, col
+            print(f"remaining food {newFood.asList()}") # looks like values are column,row for any element
+            print(newFood)
+            print(f"new scared times {newScaredTimes}")
+            print(f"ghost position {successorGameState.getGhostPositions()}") # position is row, col
+            print("=====================================\n")
+
+        #need to define a utility function, higher score is better
+        # function should have a lower value if pacman gets close to a ghost
+        #function should have a really low value if pacman wants to move where
+            # a ghost is
+        # function should have a higher value if pacman gets closer to food
+        # function should have a really high value if position is position of a food
+
+        #simple idea assign +1 value if new position is in the food list
+        if (newPos in newFood.asList()):
+            return 1
+
         return successorGameState.getScore()
 
 def scoreEvaluationFunction(currentGameState: GameState):
