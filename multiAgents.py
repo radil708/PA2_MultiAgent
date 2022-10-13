@@ -76,11 +76,11 @@ class ReflexAgent(Agent):
 
         "*** YOUR CODE HERE ***"
 
-        display = True
+        display = False
         #TODO delete print statements
 
         #SET TO FALSE before submission to remove print statement
-        if display is False:
+        if display is True:
             print(f"new position of pacman: {newPos}") # positions are row, col
             print(f"remaining food {newFood.asList()}") # looks like values are column,row for any element
             print(newFood)
@@ -98,52 +98,55 @@ class ReflexAgent(Agent):
         #simple idea assign +1 value if new position is in the food list
         #declaring util variable
         utility_value = 0
-        # if the new position is at a food then add 1 to util var
 
-        #seems like 3 possible variation of state
-            #1.) I move somewhere there is food
-            #2.) I move towards food
-            #3.) I get away from ghost
 
-        #apply penalty from ghosts i.e. reduce value more if moving closer to ghosts
-        for each_ghost in newGhostStates:
-            distance_to_ghost = util.manhattanDistance(each_ghost.getPosition(), newPos)
-            if distance_to_ghost == 0:
-                distance_to_ghost = 1
-        utility_value -= (1/(distance_to_ghost ** 2))
+        # if the action leads to a state without food
+        if (currentGameState.getFood().count() == len(newFood.asList())):
+            #the states utility should be higher if its close to a food pellet
 
-        # apply boost if getting closer to food
-        min_dist_to_food = 100000
-        for each_food_pos in newFood.asList():
-            if util.manhattanDistance(newPos, each_food_pos) < min_dist_to_food:
-                #distance to closest food
-                min_dist_to_food = util.manhattanDistance(newPos, each_food_pos)
+            # initialize dist var
+            closest_dist = float('inf')
 
-        if min_dist_to_food == 100000:
-            min_dist_to_food = 1
+            for food_pos in newFood.asList():
+                calc_dist = util.manhattanDistance(newPos, food_pos)
+                if calc_dist < closest_dist:
+                    closest_dist = calc_dist
 
-        if min_dist_to_food == 1:
-            utility_value += 1
+            if closest_dist == float('inf'):
+                raise RuntimeError("Error: Closest food pellet distance can NOT "
+                                   "be INFINITY")
+
+            # I am using a 100 scale and sort of assigning arbitrary increase
+            # I figure that if the new position is right on a new food position
+            # then the utility should increase by 100. If the newpos is 1 unit
+            # away from the food pellet then (4/4 - 1/4)100 = 75 etc..
+
+            if closest_dist == 1:
+                utility_value += 75
+            else:
+                utility_value += (1/closest_dist) * 100
         else:
-            # I want to add more if the distance to closest food is small
-            utility_value += (1/min_dist_to_food)
+            # the action that lead to successor state must have eaten a pellet
+            utility_value += 100
 
-        # if the new position is at a position of a food then apply big boost!
-        if currentGameState.getNumFood() < len(newFood.asList()):
-            utility_value += (1/2)
+        #apply penalty if moving towards ghost
+        for each_ghost in newGhostStates:
+            ghost_distance = util.manhattanDistance(newPos, each_ghost.getPosition())
 
-        #Check if new position is somewhere there is food
-        #if (currentGameState.getNumFood() < len(newFood.asList())):
-           # utility_value += 2
-
-
-
-
-        #print(newGhostStates)
-        #print(type(newGhostStates))
-        #print(newGhostStates[0].getPosition())
+            if ghost_distance == 0:
+                ghost_penalty = 75
+            elif ghost_distance == 1:
+                ghost_penalty = 50
+            else:
+                ghost_penalty = (1/ghost_distance ** 2) * 100
+            utility_value -= ghost_penalty
 
         return utility_value
+
+
+
+
+
         #this from starting code, comment out
         #return successorGameState.getScore()
 
