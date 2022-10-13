@@ -143,13 +143,6 @@ class ReflexAgent(Agent):
 
         return utility_value
 
-
-
-
-
-        #this from starting code, comment out
-        #return successorGameState.getScore()
-
 def scoreEvaluationFunction(currentGameState: GameState):
     """
     This default evaluation function just returns the score of the state.
@@ -209,6 +202,83 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
+
+        '''
+        In minimax, maximizer (pacman in this case) wants to pick state with 
+        largest possible utility
+        Ghosts want to limit our moves to the smallest possible max value we can pick
+        '''
+
+        def minimax(self,gameState: GameState, depth : int, agent_index : int):
+            # check if the game is over
+            if gameState.isWin() or gameState.isLose():
+                # this is the score of the state
+                return self.evaluationFunction(gameState)
+
+            # pacman has agent_index = 0
+            # pacman is maximizer, he wants to maximize utility value
+            if agent_index == 0:
+                # get all pacman actions
+                all_future_pacman_actions = gameState.getLegalPacmanActions()
+
+                #make a list of all potential scores of each potential future state
+                list_all_scores = []
+
+                for each_action in all_future_pacman_actions:
+                    future_state = gameState.generatePacmanSuccessor(each_action)
+                    # pass in the future state, the depth, and agent index of 1 since
+                    # ghosts have agent index of >= 1
+                    score = minimax(self, future_state, depth, 1)
+                    list_all_scores.append(score)
+
+                return max(list_all_scores)
+            # here is the ghost
+            else:
+                #
+
+
+
+
+
+        def ghost_action(self, gameState: GameState, depth, agent_index):
+            #check if the game is over
+            if gameState.isWin() or gameState.isLose():
+                # this is the score of the state
+                return self.evaluationFunction(gameState)
+
+            #game is not over pacman has moved, now its the ghosts turn
+
+            # get all ghost actions
+
+
+            x = 5
+
+
+        #need to keep track of depth
+        depth = 0
+
+        # check if the game is over, if over return no action i.e. stop
+        if gameState.isWin() or gameState.isLose():
+            return Directions.STOP
+
+        # starting at pacman lets generate all possible new states by getting all possible actions
+        all_future_pacman_actions = gameState.getLegalPacmanActions()
+
+        for action in all_future_pacman_actions:
+            #this only takes into account pacmans move
+            future_state = gameState.generatePacmanSuccessor(action)
+
+            # if the action creates a state where we win, then getAction should return that action
+            if future_state.isWin():
+                return action
+
+            # pacman will choose a state with the largest utility
+            #in order to do that we must determine all the potentual actions of the ghost
+            future_state_utility_value = ghost_action(self, future_state, depth + 1, 1)
+
+
+
+
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
