@@ -80,7 +80,7 @@ class ReflexAgent(Agent):
         #TODO delete print statements
 
         #SET TO FALSE before submission to remove print statement
-        if display is True:
+        if display is False:
             print(f"new position of pacman: {newPos}") # positions are row, col
             print(f"remaining food {newFood.asList()}") # looks like values are column,row for any element
             print(newFood)
@@ -96,10 +96,33 @@ class ReflexAgent(Agent):
         # function should have a really high value if position is position of a food
 
         #simple idea assign +1 value if new position is in the food list
+        utility_value = 0
         if (newPos in newFood.asList()):
-            return 1
+            utility_value += 1
+        else:
+            #first find closest food
+            min_food_distance = 1000
+            min_pos = None
+            for each_food_pos in newFood.asList():
+                man_distance_to_food_from_new_pos = util.manhattanDistance(newPos, each_food_pos)
+                if man_distance_to_food_from_new_pos < min_food_distance:
+                    min_food_distance = man_distance_to_food_from_new_pos
+                    min_pos = each_food_pos
+            # inverse becuase I want value to be larger
+            # if distance is smaller
+            utility_value += (1/min_food_distance)
+        # need to convert to match ghost position array.
+        # each elem is a tuple of floats
+        #if (float(newPos[0]), float(newPos[1]) in successorGameState.getGhostStates()):
+            #utilitiy_value -= 2
 
-        return successorGameState.getScore()
+        if display is True:
+            print(utility_value)
+
+        return utility_value
+
+        #this from starting code, comment out
+        #return successorGameState.getScore()
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
