@@ -96,31 +96,35 @@ class ReflexAgent(Agent):
         # function should have a really high value if position is position of a food
 
         #simple idea assign +1 value if new position is in the food list
+        #declaring util variable
         utility_value = 0
-        if (newPos in newFood.asList()):
-            utility_value += 1
-        else:
-            #first find closest food
-            min_food_distance = 1000
-            min_pos = None
-            for each_food_pos in newFood.asList():
-                man_distance_to_food_from_new_pos = util.manhattanDistance(newPos, each_food_pos)
-                if man_distance_to_food_from_new_pos < min_food_distance:
-                    min_food_distance = man_distance_to_food_from_new_pos
-                    min_pos = each_food_pos
-            # inverse becuase I want value to be larger
-            # if distance is smaller
-            utility_value += (1/min_food_distance)
-        # need to convert to match ghost position array.
-        # each elem is a tuple of floats
-        #if (float(newPos[0]), float(newPos[1]) in successorGameState.getGhostStates()):
-            #utilitiy_value -= 2
+        # if the new position is at a food then add 1 to util var
 
-        if display is True:
-            print(utility_value)
+        #seems like 3 possible variation of state
+            #1.) I move somewhere there is food
+            #2.) I move towards food
+            #3.) I get away from ghost
+
+        #apply penalty from ghosts
+        for each_ghost in newGhostStates:
+            distance_to_ghost = util.manhattanDistance(each_ghost.getPosition(), newPos)
+            if distance_to_ghost == 0:
+                distance_to_ghost = 1
+        utility_value -= (1/(distance_to_ghost ** 2))
+
+
+        #Check if new position is somewhere there is food
+        if (currentGameState.getNumFood() < len(newFood.asList())):
+            utility_value += 2
+
+
+
+
+        #print(newGhostStates)
+        #print(type(newGhostStates))
+        #print(newGhostStates[0].getPosition())
 
         return utility_value
-
         #this from starting code, comment out
         #return successorGameState.getScore()
 
