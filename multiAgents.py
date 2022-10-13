@@ -105,17 +105,36 @@ class ReflexAgent(Agent):
             #2.) I move towards food
             #3.) I get away from ghost
 
-        #apply penalty from ghosts
+        #apply penalty from ghosts i.e. reduce value more if moving closer to ghosts
         for each_ghost in newGhostStates:
             distance_to_ghost = util.manhattanDistance(each_ghost.getPosition(), newPos)
             if distance_to_ghost == 0:
                 distance_to_ghost = 1
         utility_value -= (1/(distance_to_ghost ** 2))
 
+        # apply boost if getting closer to food
+        min_dist_to_food = 100000
+        for each_food_pos in newFood.asList():
+            if util.manhattanDistance(newPos, each_food_pos) < min_dist_to_food:
+                #distance to closest food
+                min_dist_to_food = util.manhattanDistance(newPos, each_food_pos)
+
+        if min_dist_to_food == 100000:
+            min_dist_to_food = 1
+
+        if min_dist_to_food == 1:
+            utility_value += 1
+        else:
+            # I want to add more if the distance to closest food is small
+            utility_value += (1/min_dist_to_food)
+
+        # if the new position is at a position of a food then apply big boost!
+        if currentGameState.getNumFood() < len(newFood.asList()):
+            utility_value += (1/2)
 
         #Check if new position is somewhere there is food
-        if (currentGameState.getNumFood() < len(newFood.asList())):
-            utility_value += 2
+        #if (currentGameState.getNumFood() < len(newFood.asList())):
+           # utility_value += 2
 
 
 
