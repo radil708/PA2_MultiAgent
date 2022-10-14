@@ -326,47 +326,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         #Rewrite to fix bug
 
-        #initialize variables
-        start_node_value = float('-inf')
-        best_action_from_start = Directions.STOP
-        start_alpha = float('-inf')
-        start_beta = float('inf')
-        initial_depth = 0
-
-        #need this var for the for loop to compare and find max score
-        indiv_state_calc_value = float('-inf')
-
-        # we start at pacman current state
-        # let's check if the game is over
-        if gameState.isWin() or gameState.isLose():
-            # if the game is over we still need to return an action
-            return best_action_from_start
-
-        #now we need to get all actions from start and find the best score among them
-        #pacman index is 0 so this is all possible actions from current state of pacman
-        all_actions_from_start_node = gameState.getLegalActions(0)
-
-        # generate all states of pacman as a result of an action
-        future_states_list = []
-
-        for each_action in all_actions_from_start_node:
-            # get the new state as the result of a pacman action
-            future_states_list.append(gameState.generateSuccessor(0, each_action))
-            # this state is incomplete since it doesn't take into account the actions of the ghost agents
-
-        #lets get the score calculated from the min node
-
-        for each_transition_state_index in range(len(future_states_list)):
-            indiv_state_calc_value = get_minimizer_score()
-
-            #since start is a maximizer node we need to get a value that is the largest
-            if indiv_state_calc_value > start_node_value:
-                start_node_value = indiv_state_calc_value
-                #update the best action to return
-                best_action_from_start = all_actions_from_start_node[each_transition_state_index]
-
-        return best_action_from_start
-
         def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, min_alpha_v,min_beta_v):
             # first check if the game is over or if we have reached the terminal depth/node
             if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
@@ -392,7 +351,12 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 # for each state get the score
                 for each_action in all_future_possible_actions_of_ghost:
                     future_state = gameState.generateSuccessor(current_ghost_agent_index, each_action)
-                    current_calc_minimizer_score = get_max_score()
+
+                    #each depth consists of a set of states that are a result of
+                    #   a pacman action and a ghost action
+                    # so if we are moving to pacman making an action we go down to next depth
+                    current_calc_minimizer_score = get_best_maximizer_score_from_maximizer_level(
+                        self,future_state,current_depth + 1,min_alpha_v,min_beta_v)
 
                     lowest_minimizer_value = min(lowest_minimizer_value,current_calc_minimizer_score)
                     min_beta_v = min(min_beta_v, lowest_minimizer_value)
@@ -428,6 +392,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             #one action can generate one state
             # check the best score from each state
 
+            pruned_flag = False
 
             for each_action in all_potential_actions:
 
@@ -457,137 +422,52 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             else:
                 return largest_maximizer_value
 
-
-
-
-
-
-
-
-        def maximizer_node_get_score(self, gameState: GameState, current_depth: int, alpha_v,beta_v):
-
-
-
-
-        def max_agent(self, gameState: GameState, current_depth: int, alpha_v,beta_v):
-            # first check if the game is over or if we have reached the terminal depth/node
-            if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
-                return self.evaluationFunction(gameState)
-
-            # initialize
-            maximizer_score = float('-inf')
-            pac_score = float('-inf')
-
-            all_future_actions_from_pac = gameState.getLegalActions()
-
-            for each_action in all_future_actions_from_pac:
-                future_pac_state = gameState.generateSuccessor(0, each_action)
-
-                pac_score = min_agent(self,future_pac_state,current_depth,1,alpha_v,beta_v)
-
-                if pac_score > maximizer_score:
-                    maximizer_score = pac_score
-                    #update alpha if necessary
-
-                alpha_v = max(maximizer_score, alpha_v)
-
-                if maximizer_score > beta_v:
-                    return maximizer_score
-
-            return maximizer_score
-
-
-
-        def min_agent(self, gameState: GameState, current_depth: int, agent_index: int, alpha_v, beta_v):
-            # first check if the game is over or if we have reached the depth
-            if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
-                return self.evaluationFunction(gameState)
-
-            minimizer_score = float('inf')
-            ghost_score = float('inf')
-
-            # we check if we are at the last index, i.e. if the next turn is pacmans
-            if agent_index == gameState.getNumAgents() - 1:
-                next_agent = 0
-            else:
-                next_agent = agent_index + 1
-
-            all_future_actions_from_ghosts_state = gameState.getLegalActions(agent_index)
-
-            for each_ghost_action in all_future_actions_from_ghosts_state:
-                # this state is if the ghosts have made their moves
-                future_ghost_state = gameState.generateSuccessor(agent_index, each_ghost_action)
-
-                # at each state find the agent that will yield the lowest value
-                if next_agent >= 1:
-                    #todo fix call recursive max
-                    ghost_score = min_agent(self,future_ghost_state,current_depth,next_agent, alpha_v,beta_v)
-                # means we move on to next depth because pacmans turn is next
-                else:
-                    if current_depth == self.depth - 1: # at terminal node essentially
-                        ghost_score = self.evaluationFunction(future_ghost_state)
-                    else:
-                        #TODO recursive call here
-                        ghost_score = max_agent(self,future_ghost_state,current_depth + 1,alpha_v,beta_v)
-
-                if ghost_score < minimizer_score:
-                    minimizer_score = ghost_score
-                    #Todo should i push this out?
-
-                beta_v = min(beta_v, minimizer_score)
-
-                #pruning can happen here
-                # alpha_v represents current best choice for maximizer
-                # if this min node has a value lower than alpha_v it will be ignored by the
-                # maximizer so just cut it off here
-                if minimizer_score < alpha_v:
-                    return minimizer_score
-
-            return minimizer_score
-
-        # represents highest value found so far, max nodes update this value and pass it up
-        # to the node above
-        alpha_v = float("-inf")
-
-        # represents lowest value found so far, min nodes update this value, but pass it up
-        # to the node above
-        beta_v = float("inf")
-
-        # setting up action to return variable
-        returned_action = Directions.STOP
+        # initialize variables
+        start_node_value = float('-inf')
+        best_action_from_start = Directions.STOP
+        start_alpha = float('-inf')
+        start_beta = float('inf')
         initial_depth = 0
+
+        # need this var for the for loop to compare and find max score
+        indiv_state_calc_value = float('-inf')
 
         # we start at pacman current state
         # let's check if the game is over
         if gameState.isWin() or gameState.isLose():
             # if the game is over we still need to return an action
-            return returned_action
+            return best_action_from_start
 
-        # first turn is pacmans turn
-        # pacman acts as maximizer and wants to pick a state with the largest utility value
-        # lets get all potential pacman actions so we can get all future pacman states
-        all_future_pacman_actions = gameState.getLegalActions()
+        # now we need to get all actions from start and find the best score among them
+        # pacman index is 0 so this is all possible actions from current state of pacman
+        all_actions_from_start_node = gameState.getLegalActions(0)
 
-        maximizer_score = float('-inf')
+        # generate all states of pacman as a result of an action
+        future_states_list = []
 
-        # get each state for corresponding action from pacman state
-        for each_action in all_future_pacman_actions:
-            # pass in 0 becuase that is pacmans index value
-            future_state = gameState.generateSuccessor(0, each_action)
-            # this is the state of one pacman action happening
+        for each_action in all_actions_from_start_node:
+            # get the new state as the result of a pacman action
+            future_states_list.append(gameState.generateSuccessor(0, each_action))
+            # this state is incomplete since it doesn't take into account the actions of the ghost agents
 
-            if future_state.isWin():
-                return each_action
+        # lets get the score calculated from the min node
 
-            pac_score = min_agent(self, future_state, initial_depth, 1, alpha_v, beta_v)
+        for each_transition_state_index in range(len(future_states_list)):
+            indiv_state_calc_value = \
+                get_best_minimizer_score_from_minimizer_level(
+                    self,future_states_list[each_transition_state_index],
+                    initial_depth,start_alpha,start_beta)
 
-            if pac_score > maximizer_score:
-                maximizer_score = pac_score
-                returned_action = each_action
-                # update alpha if necessary
+            # since start is a maximizer node we need to get a value that is the largest
+            if indiv_state_calc_value > start_node_value:
+                start_node_value = indiv_state_calc_value
+                # update the best action to return
+                best_action_from_start = all_actions_from_start_node[each_transition_state_index]
+
+        return best_action_from_start
 
 
-        return returned_action
+
 
 
 
