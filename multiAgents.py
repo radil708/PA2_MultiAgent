@@ -209,74 +209,218 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Ghosts want to limit our moves to the smallest possible max value we can pick
         '''
 
-        def minimax(self,gameState: GameState, depth : int, agent_index : int):
+        def get_score_state_at_ghost_state(self, gameState: GameState, current_depth, agent_index):
+            # first check if the game is over or if we have reached the depth
+            if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
+                return self.evaluationFunction(gameState)
+
+            # we check if we are at the last index, i.e. if the next turn is pacmans
+            if agent_index == gameState.getNumAgents() - 1:
+                next_agent = 0
+            else:
+                next_agent = agent_index + 1
+
+            minimizer_score = float('inf')
+            ghost_score = float('inf')
+
+            all_future_actions_from_ghosts_state = gameState.getLegalActions(agent_index)
+
+            for each_ghost_action in all_future_actions_from_ghosts_state:
+                # this state is if the ghosts have made their moves
+                future_ghost_state = gameState.generateSuccessor(agent_index, each_ghost_action)
+
+                # at each state find the agent that will yield the lowest value
+                if next_agent >= 1:
+                    ghost_score = get_score_state_at_ghost_state(self, future_ghost_state, current_depth, next_agent)
+                # means we move on to next depth because pacmans turn is next
+                else:
+                    # if the next movement is the end of our depth limit return a score
+                    if current_depth == self.depth - 1:
+                        ghost_score = self.evaluationFunction(future_ghost_state)
+                    # otherwise do recursive call on pacman node
+                    else:
+                        # TODO fix to do
+                        ghost_score = get_score_at_pacman_state(self,future_ghost_state,current_depth + 1)
+
+                # this needs to be in the loop
+                if ghost_score < minimizer_score:
+                    minimizer_score = ghost_score
+
+            return minimizer_score
+
+        def get_score_at_pacman_state(self, gameState: GameState, current_depth):
+            # first check if the game is over or if we have reached the depth
+            if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
+                return self.evaluationFunction(gameState)
+
+            #initialize
+            maximizer_score = float('-inf')
+            pac_score = float('-inf')
+
+            all_future_actions_from_pac = gameState.getLegalPacmanActions()
+
+            for each_action in all_future_actions_from_pac:
+                future_pac_state = gameState.generateSuccessor(0, each_action)
+
+                if current_depth == self.depth - 1:
+                    pac_score = self.evaluationFunction(future_pac_state)
+                else:
+                    pac_score = get_score_state_at_ghost_state(self, future_pac_state,current_depth + 1, 1)
+
+                if pac_score > maximizer_score:
+                    maximizer_score = pac_score
+
+            return maximizer_score
+
+
+
+        #initialize variables to keep track
+        max_value = float('-inf')
+        #setting up action to return variable
+        returned_action = Directions.STOP
+        initial_depth = 0
+
+        #some info to remember
+        #there is an agent list, pacman has index value = 0, ghosts have index value >= 1
+        # there can be any number of ghosts
+
+        # we start at pacman current state
+        # let's check if the game is over
+        if gameState.isWin() or gameState.isLose():
+            # if the game is over we still need to return an action
+            return returned_action
+
+        #first turn is pacmans turn
+        #pacman acts as maximizer and wants to pick a state with the largest utility value
+        # lets get all potential pacman actions so we can get all future pacman states
+        all_future_pacman_actions = gameState.getLegalPacmanActions()
+
+
+        # get each state for corresponding action from pacman state
+        for each_action in all_future_pacman_actions:
+            # pass in 0 becuase that is pacmans index value
+            future_state = gameState.generateSuccessor(0,each_action)
+            # this is the state of one pacman action happening
+
+            #in order to calculate score of this state we must call agent recursive function
+            #TODO FIX, not just value
+            future_state_score = get_score_state_at_ghost_state(self,future_state,initial_depth + 1,1)
+
+            if future_state_score > max_value:
+                max_value = future_state_score
+                returned_action = each_action
+
+        return returned_action
+
+
+
+
+
+
+
+
+
+
+
+
+        #This function will return a utility value
+        def agent_recursive(self, gameState: GameState, current_depth : int, agent_index : int, score):
+            #first check if the game is over or if we have reached the depth
+            if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
+                return self.evaluationFunction(gameState)
+
+            #otherwise let's see whose turn it is
+
+            #we check if we are at the last index, i.e. if the next turn is pacmans
+            if agent_index == gameState.getNumAgents() - 1 :
+                next_agent = 0
+            else:
+                next_agent = agent_index + 1
+
+            # ghosts have agent index >= 1, so if we pass >= 1 we are saying a ghosts turn
+            if agent_index !=0:
+                minimizer_score = float('inf')
+                ghost_score = float('inf')
+                all_future_actions_from_ghosts_state = gameState.getLegalActions(agent_index)
+                for each_ghost_action in all_future_actions_from_ghosts_state:
+                    # this states is if the ghosts have made their moves
+                    future_ghost_state = gameState.generateSuccessor(agent_index, each_ghost_action)
+
+                    # lets check if the next state is pacmans turn
+                    if next_agent == 0:
+                        # if the next movement is the end of our depth limit return a score
+                        if current_depth == self.depth - 1:
+                            ghost_score =  self.evaluationFunction(gameState)
+                        #otherwise call recursive function and increment depth because we move to next leve
+                        else:
+                            ghost_score = agent_recursive(self,gameState,current_depth + 1, next_agent + 1)
+
+
+                    else:# if the next agent is still a ghost we stay on the same level
+                        ghost_score = agent_recursive(self,future_ghost_state,current_depth,next_agent )
+
+                    if ghost_score < minimizer_score:
+                        minimizer_score = ghost_score
+
+                return minimizer_score
+
+            else:
+
+
+
+
+
+
+
+        # def minimax(self,gameState: GameState, depth : int, agent_index : int):
+        #     # check if the game is over
+        #     if gameState.isWin() or gameState.isLose():
+        #         # this is the score of the state
+        #         return self.evaluationFunction(gameState)
+        #
+        #     # pacman has agent_index = 0
+        #     # pacman is maximizer, he wants to maximize utility value
+        #     if agent_index == 0:
+        #         # get all pacman actions
+        #         all_future_pacman_actions = gameState.getLegalPacmanActions()
+        #
+        #         #make a list of all potential scores of each potential future state
+        #         list_all_scores = []
+        #
+        #         for each_action in all_future_pacman_actions:
+        #             future_state = gameState.generatePacmanSuccessor(each_action)
+        #             # pass in the future state, the depth, and agent index of 1 since
+        #             # ghosts have agent index of >= 1
+        #             score = minimax(self, future_state, depth, 1)
+        #             list_all_scores.append(score)
+        #
+        #         return max(list_all_scores)
+        #     # here is the ghost
+        #     else:
+
+        def minimizer_agent(self, depth : int, gameState: GameState, agent_index : int):
+
+        def maximizer_agent(self, depth : int, gameState: GameState):
             # check if the game is over
             if gameState.isWin() or gameState.isLose():
                 # this is the score of the state
                 return self.evaluationFunction(gameState)
 
-            # pacman has agent_index = 0
             # pacman is maximizer, he wants to maximize utility value
-            if agent_index == 0:
-                # get all pacman actions
-                all_future_pacman_actions = gameState.getLegalPacmanActions()
 
-                #make a list of all potential scores of each potential future state
-                list_all_scores = []
+            # get all pacman actions
+            all_future_pacman_actions = gameState.getLegalPacmanActions()
 
-                for each_action in all_future_pacman_actions:
-                    future_state = gameState.generatePacmanSuccessor(each_action)
-                    # pass in the future state, the depth, and agent index of 1 since
-                    # ghosts have agent index of >= 1
-                    score = minimax(self, future_state, depth, 1)
-                    list_all_scores.append(score)
+            # make a list of all potential scores of each potential future state
+            list_all_scores = []
+            best_action = None
 
-                return max(list_all_scores)
-            # here is the ghost
-            else:
-                #
-
-
-
-
-
-        def ghost_action(self, gameState: GameState, depth, agent_index):
-            #check if the game is over
-            if gameState.isWin() or gameState.isLose():
-                # this is the score of the state
-                return self.evaluationFunction(gameState)
-
-            #game is not over pacman has moved, now its the ghosts turn
-
-            # get all ghost actions
-
-
-            x = 5
-
-
-        #need to keep track of depth
-        depth = 0
-
-        # check if the game is over, if over return no action i.e. stop
-        if gameState.isWin() or gameState.isLose():
-            return Directions.STOP
-
-        # starting at pacman lets generate all possible new states by getting all possible actions
-        all_future_pacman_actions = gameState.getLegalPacmanActions()
-
-        for action in all_future_pacman_actions:
-            #this only takes into account pacmans move
-            future_state = gameState.generatePacmanSuccessor(action)
-
-            # if the action creates a state where we win, then getAction should return that action
-            if future_state.isWin():
-                return action
-
-            # pacman will choose a state with the largest utility
-            #in order to do that we must determine all the potentual actions of the ghost
-            future_state_utility_value = ghost_action(self, future_state, depth + 1, 1)
-
-
+            for each_action in all_future_pacman_actions:
+                future_state = gameState.generatePacmanSuccessor(each_action)
+                # pass in the future state, the depth, and agent index of 1 since
+                # ghosts have agent index of >= 1
+                score = minimizer_agent(self, future_state, depth, 1)
+                list_all_scores.append(score)
 
 
         util.raiseNotDefined()
