@@ -327,6 +327,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         #Rewrite to fix bug
 
         def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, min_alpha_v,min_beta_v):
+
+            display = False
+
             # first check if the game is over or if we have reached the terminal depth/node
             if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
                 return self.evaluationFunction(gameState)
@@ -340,9 +343,15 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             # This will complete one state
             total_ghost_agents = gameState.getNumAgents() - 1 #total_agents = pacman + ghost 1 + ghost 2 + etc.. ghost x
 
+            pruned_flag = False
 
             for i in range(0, total_ghost_agents):
+                if pruned_flag == True:
+                    break
                 pruned_flag = False
+
+                #agent list looks like this [pacman, ghost1, ghost2,...etc]
+
                 current_ghost_agent_index = i + 1
 
                 all_future_possible_actions_of_ghost = gameState.getLegalActions(current_ghost_agent_index)
@@ -351,6 +360,13 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 # for each state get the score
                 for each_action in all_future_possible_actions_of_ghost:
                     future_state = gameState.generateSuccessor(current_ghost_agent_index, each_action)
+
+                    #if more than one ghost we need to accumulate the score, i.e. from this current state
+                    # where one ghost has moved, call minimizer again to represent the movement of the other ghost
+                    # to get the score of this ghost move + other ghost moved .. etc
+                    # to get a full picture of the state
+
+                    if current_ghost_agent_index <= gameState.getNumAgents() - 1:
 
                     #each depth consists of a set of states that are a result of
                     #   a pacman action and a ghost action
@@ -373,11 +389,20 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                         saved_prev_val = current_calc_minimizer_score
 
             if pruned_flag == True:
-                return saved_prev_val
+                if display == True:
+                    print(f"pruned at MIN: {saved_prev_val}")
+                    #you watnt the maximizer to ignore this node as well
+                    # so return a value 1 lower than the alpha
+                    #alpha represents best current option for max
+                return min_alpha_v - 1
             else:
+                if display == True:
+                    print(f"MIN node value = {lowest_minimizer_value}")
                 return lowest_minimizer_value
 
         def get_best_maximizer_score_from_maximizer_level(self, gameState: GameState, current_depth: int, max_alpha_v,max_beta_v):
+            display = False
+
             # first check if the game is over or if we have reached the terminal depth/node
             if gameState.isWin() or gameState.isLose() or current_depth == self.depth:
                 return self.evaluationFunction(gameState)
@@ -418,9 +443,18 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                     saved_prev_val = largest_maximizer_value
 
             if pruned_flag == True:
-                return saved_prev_val
+                if display == True:
+                    print(f"pruned at MAX: {saved_prev_val}")
+                # you want minimizer node to ignore this since its already
+                # larger than the best lowest option so return a value
+                # larger than the best lowest option
+                return max_beta_v + 1
             else:
+                if display == True:
+                    print(f"MAX node val = {largest_maximizer_value}")
                 return largest_maximizer_value
+
+        display = False
 
         # initialize variables
         start_node_value = float('-inf')
@@ -428,6 +462,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         start_alpha = float('-inf')
         start_beta = float('inf')
         initial_depth = 0
+
+        print(gameState.getNumAgents())
+
 
         # need this var for the for loop to compare and find max score
         indiv_state_calc_value = float('-inf')
@@ -463,6 +500,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 start_node_value = indiv_state_calc_value
                 # update the best action to return
                 best_action_from_start = all_actions_from_start_node[each_transition_state_index]
+
+            start_alpha = max(start_alpha, indiv_state_calc_value)
+            if display:
+                print(f"Current start alpha value = {start_alpha}")
+                print("==========================\n")
 
         return best_action_from_start
 
