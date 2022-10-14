@@ -326,7 +326,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         #Rewrite to fix bug
 
-        def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, min_alpha_v,min_beta_v):
+        def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, current_agent_index, min_alpha_v, min_beta_v):
 
             display = False
 
@@ -336,61 +336,40 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
             #initialize variables to keep track of things
             lowest_minimizer_value = float('inf')
-            saved_prev_val = None
-            current_calc_minimizer_score = float('inf')
-
-            # lets get all the states resulting from all ghost agents moving
-            # This will complete one state
-            total_ghost_agents = gameState.getNumAgents() - 1 #total_agents = pacman + ghost 1 + ghost 2 + etc.. ghost x
-
+            current_calc_value = None
             pruned_flag = False
 
-            for i in range(0, total_ghost_agents):
-                if pruned_flag == True:
+            all_future_possible_actions_of_ghost = gameState.getLegalActions(current_agent_index)
+
+            for each_action in all_future_possible_actions_of_ghost:
+                future_state = gameState.generateSuccessor(current_agent_index, each_action)
+
+                # this means we will be finished accumulating the ghost movement score for 1 state
+                if current_agent_index == gameState.getNumAgents() - 1:
+                    # going from minimizer node to maximizer node
+                    current_calc_value = get_best_maximizer_score_from_maximizer_level(self,future_state,current_depth + 1,min_alpha_v, min_beta_v)
+                else:
+                    # this means we are going from minimizer node to minimizer node
+                    # this is to accumulate the actions for each ghost on one state
+                    current_calc_value = get_best_minimizer_score_from_minimizer_level(
+                        self,future_state, current_depth,current_agent_index + 1, min_alpha_v, min_beta_v)
+
+                lowest_minimizer_value = min(lowest_minimizer_value, current_calc_value)
+                min_beta_v = min(min_beta_v, lowest_minimizer_value)
+
+                # pruning happens here
+                # means that lowest value we can get is already less than the best value
+                # for the maximizer above us, cut this off because maximizer will ignore this node already
+                # go check out next available node
+                #IMPORTANT THIS NEEDS to be less than NOT less than or equal to pass the tests
+                if min_beta_v < min_alpha_v:
+                    pruned_flag = True
                     break
-                pruned_flag = False
 
-                #agent list looks like this [pacman, ghost1, ghost2,...etc]
-
-                current_ghost_agent_index = i + 1
-
-                all_future_possible_actions_of_ghost = gameState.getLegalActions(current_ghost_agent_index)
-
-                # each action leads to one state
-                # for each state get the score
-                for each_action in all_future_possible_actions_of_ghost:
-                    future_state = gameState.generateSuccessor(current_ghost_agent_index, each_action)
-
-                    #if more than one ghost we need to accumulate the score, i.e. from this current state
-                    # where one ghost has moved, call minimizer again to represent the movement of the other ghost
-                    # to get the score of this ghost move + other ghost moved .. etc
-                    # to get a full picture of the state
-
-                    if current_ghost_agent_index <= gameState.getNumAgents() - 1:
-
-                    #each depth consists of a set of states that are a result of
-                    #   a pacman action and a ghost action
-                    # so if we are moving to pacman making an action we go down to next depth
-                    current_calc_minimizer_score = get_best_maximizer_score_from_maximizer_level(
-                        self,future_state,current_depth + 1,min_alpha_v,min_beta_v)
-
-                    lowest_minimizer_value = min(lowest_minimizer_value,current_calc_minimizer_score)
-                    min_beta_v = min(min_beta_v, lowest_minimizer_value)
-
-                    #pruning happens here
-                    # means that lowest value we can get is already less than the best value
-                    # for the maximizer above us, cut this off because maximizer will ignore this node already
-                    # go check out next available node
-                    if min_beta_v <= min_alpha_v:
-                        pruned_flag = True
-                        break
-
-                    if pruned_flag == False:
-                        saved_prev_val = current_calc_minimizer_score
 
             if pruned_flag == True:
                 if display == True:
-                    print(f"pruned at MIN: {saved_prev_val}")
+                    print(f"pruned at MIN: alpha-1 = {min_alpha_v - 1}")
                     #you watnt the maximizer to ignore this node as well
                     # so return a value 1 lower than the alpha
                     #alpha represents best current option for max
@@ -428,7 +407,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 #score of current state
                 current_calc_maximizer_value = \
                     get_best_minimizer_score_from_minimizer_level(
-                        self,future_state, current_depth,max_alpha_v,max_beta_v)
+                        self,future_state, current_depth, 1,max_alpha_v,max_beta_v)
 
                 largest_maximizer_value = max(largest_maximizer_value, current_calc_maximizer_value)
                 max_alpha_v = max(max_alpha_v, largest_maximizer_value)
@@ -463,8 +442,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         start_beta = float('inf')
         initial_depth = 0
 
-        print(gameState.getNumAgents())
-
 
         # need this var for the for loop to compare and find max score
         indiv_state_calc_value = float('-inf')
@@ -493,7 +470,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             indiv_state_calc_value = \
                 get_best_minimizer_score_from_minimizer_level(
                     self,future_states_list[each_transition_state_index],
-                    initial_depth,start_alpha,start_beta)
+                    initial_depth,1,start_alpha,start_beta)
 
             # since start is a maximizer node we need to get a value that is the largest
             if indiv_state_calc_value > start_node_value:
