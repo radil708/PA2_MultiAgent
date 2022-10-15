@@ -311,8 +311,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
         return returned_action
 
-        util.raiseNotDefined()
-
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
@@ -323,7 +321,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        #Rewrite to fix bug
+        #Rewritten to fix bug
 
         def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, current_agent_index, min_alpha_v, min_beta_v):
 
@@ -630,8 +628,65 @@ def betterEvaluationFunction(currentGameState: GameState):
     evaluation function (question 5).
 
     DESCRIPTION: <write something here so we know what you did>
+    I will approach it similarly to q1
+    1.) states that get pacman closer to the closest food pellet should have a higher value
+    2.) Apply penalty based on the distance from pacman to a ghost
+        A state where pacman is closer to the ghost will have a higher penalty than
+        one where pacman is farther away from ghost
+
+        If a pellet is nabbed that will allow pacman to eat ghosts, penalty may
+        differ based on if the ghost near
+    Here will be what is different
+    3.) Getting closer to the pellet is good so apply a bonus
+        If we are right next to the pellet, apply big bonus to get it!
     """
     "*** YOUR CODE HERE ***"
+    # this doesn't take an action so solely based on current state
+    # Useful information you can extract from a GameState (pacman.py)
+    pacman_position = currentGameState.getPacmanPosition()
+    food_positions = currentGameState.getFood().asList()
+    power_pellets_position_list = currentGameState.getCapsules()
+    ghostAgents = currentGameState.getGhostStates()
+
+
+    #ghost.scaredTimer gets you turns left that ghost is scared
+    utility_value = 0
+    closest_dist = float('inf')
+
+    # distance to closest food pellet
+    for each_food_position in food_positions:
+        calc_dist = util.manhattanDistance(each_food_position, pacman_position)
+        if calc_dist < closest_dist:
+            closest_dist = calc_dist
+
+    if closest_dist == float('inf'):
+        raise RuntimeError("closest dist cannot be infinity")
+
+    if closest_dist == 1:
+        utility_value += 75
+    else:
+        utility_value += (1 / closest_dist) * 100
+
+    closest_dist_to_pellet = float('inf')
+    pelletsLeft = False
+
+    if pelletsLeft == True:
+        # apply bonus if pellets left
+        utility_value += ((1 / (closest_dist ** 2)) * 100) / 2
+
+
+    #apply ghost penalty only if ghost is scared
+    for each_ghost in ghostAgents:
+        if each_ghost.scaredTimer > 1:
+            calc_dist_to_ghost = util.manhattanDistance(each_ghost.getPosition(), pacman_position)
+            if calc_dist_to_ghost == 0:
+                utility_value -= 100
+            else:
+                utility_value -= (1/calc_dist_to_ghost) * 100
+
+
+    return utility_value
+
     util.raiseNotDefined()
 
 # Abbreviation
