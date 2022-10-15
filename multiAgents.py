@@ -633,12 +633,6 @@ def betterEvaluationFunction(currentGameState: GameState):
     2.) Apply penalty based on the distance from pacman to a ghost
         A state where pacman is closer to the ghost will have a higher penalty than
         one where pacman is farther away from ghost
-
-        If a pellet is nabbed that will allow pacman to eat ghosts, penalty may
-        differ based on if the ghost near
-    Here will be what is different
-    3.) Getting closer to the pellet is good so apply a bonus
-        If we are right next to the pellet, apply big bonus to get it!
     """
     "*** YOUR CODE HERE ***"
     # this doesn't take an action so solely based on current state
@@ -653,37 +647,28 @@ def betterEvaluationFunction(currentGameState: GameState):
     utility_value = 0
     closest_dist = float('inf')
 
-    # distance to closest food pellet
-    for each_food_position in food_positions:
-        calc_dist = util.manhattanDistance(each_food_position, pacman_position)
-        if calc_dist < closest_dist:
-            closest_dist = calc_dist
+    #contribute food bonus
+    for food_pos in food_positions:
+        calc_dist = util.manhattanDistance(food_pos,pacman_position)
+        closest_dist = min(closest_dist, calc_dist)
 
-    if closest_dist == float('inf'):
-        raise RuntimeError("closest dist cannot be infinity")
+        if closest_dist <= 1:
+            closest_dist = 1
 
-    if closest_dist == 1:
-        utility_value += 75
-    else:
-        utility_value += (1 / closest_dist) * 100
+    #get accumulation of ghost distances
+    dist_ghosts = 0
 
-    closest_dist_to_pellet = float('inf')
-    pelletsLeft = False
+    for ghost in ghostAgents:
+        dist_to_ghost = util.manhattanDistance(ghost.getPosition(), pacman_position)
 
-    if pelletsLeft == True:
-        # apply bonus if pellets left
-        utility_value += ((1 / (closest_dist ** 2)) * 100) / 2
+        if dist_to_ghost <= 1:
+            dist_ghosts += 1
+        else:
+            dist_ghosts += dist_to_ghost
 
-
-    #apply ghost penalty only if ghost is scared
-    for each_ghost in ghostAgents:
-        if each_ghost.scaredTimer > 1:
-            calc_dist_to_ghost = util.manhattanDistance(each_ghost.getPosition(), pacman_position)
-            if calc_dist_to_ghost == 0:
-                utility_value -= 100
-            else:
-                utility_value -= (1/calc_dist_to_ghost) * 100
-
+    #current game score will decrease if moving to a spot with no food, should help
+    # give pacman incentive to go towards food
+    utility_value += (1/closest_dist) - (1/(dist_ghosts ** 2)) + currentGameState.getScore()
 
     return utility_value
 
