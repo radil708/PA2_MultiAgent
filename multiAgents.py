@@ -321,7 +321,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        #Rewritten to fix bug
 
         def get_best_minimizer_score_from_minimizer_level(self, gameState: GameState, current_depth: int, current_agent_index, min_alpha_v, min_beta_v):
 
@@ -630,9 +629,9 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     I will approach it similarly to q1
     1.) states that get pacman closer to the closest food pellet should have a higher value
-    2.) Apply penalty based on the distance from pacman to a ghost
-        A state where pacman is closer to the ghost will have a higher penalty than
-        one where pacman is farther away from ghost
+    2.) Apply penalty based on the distance from pacman to ghosts
+        A state where pacman is closer to the ghosts will have a higher penalty than
+        one where pacman is farther away from ghosts
     """
     "*** YOUR CODE HERE ***"
     # this doesn't take an action so solely based on current state

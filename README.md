@@ -10,7 +10,7 @@ The autograder can be run using the command: python autograder.py
 The autograder can be run on any specific question using the command: python autograder.py -q q2
 The autograder can be run on any specific question without graphics using: python autograder.py -q q1 --no-graphics
 
-#########################################################################################
+#############################################################################
 Questions:
 
 Reflex Agent
